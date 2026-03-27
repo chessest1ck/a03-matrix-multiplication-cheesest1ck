@@ -3,11 +3,12 @@
 #include<time.h>
 #include "mm.h"
 
+#define min(a, b) ((a) < (b) ? (a) : (b))
 #define FLUSH_SIZE (20 * 1024 * 1024)
 
 // Task 1: Flush the cache so that we can do our measurement :)
 void flush_all_caches() {
-	size_t count = (size_t)FLUSH_SIZE;
+	size_t count = 4194304;
 	long *flush_array = malloc(sizeof(long) * count);
 	if (flush_array == NULL) {
 		return;
@@ -41,27 +42,15 @@ void free_all() {
 void multiply_base() {
 	// Your code here
 	// Implement your baseline matrix multiply here. // Assuming SIZEX == SIZEY
-	int s = 64; // Block size, can be tuned for better performance
-	for(int jj = 0; jj < SIZEX; jj += s){
-        for(int kk = 0; kk < SIZEX; kk += s){
-            for(int i = 0; i < SIZEX; i++){
-				for(int j = jj; j < ((jj + s) > SIZEX ? SIZEX :(jj + s)); j++){
-					long temp = 0;
-					for(int k = kk; k < ((kk + s) > SIZEX ? SIZEX : (kk + s)); k++){
-						temp += huge_matrixA[i * SIZEY + k] * huge_matrixB[k * SIZEY + j];
-					}
-					huge_matrixC[i * SIZEY + j] += temp;
-				}
+	int i, j, k;
+	for (i = 0; i < SIZEX; i++) {
+		for (k = 0; k < SIZEY; k++) {
+			long row = huge_matrixA[i*SIZEY + k];
+			for (j = 0; j < SIZEY; j++) {
+				huge_matrixC[i*SIZEY + j] += row * huge_matrixB[k*SIZEY + j];
 			}
-        }
+		}
 	}
-	// for (int i = 0; i < SIZEX; i++) {
-	// 	printf("Row %d: ", i);
-	// 	for (int j = 0; j < SIZEY; j++) {
-	// 		printf("%ld ", huge_matrixC[i * SIZEY + j]);
-	// 	}
-	// 	printf("\n");
-	// }
 }
 
 void compare_results() {
@@ -95,14 +84,6 @@ void write_results() {
 
 void load_matrix() {
 	long i;
-	fin1 = fopen("./input1.in","r");
-	fin2 = fopen("./input2.in","r");
-	fout = fopen("./out.in","w");
-	
-	if (fin1 == NULL || fin2 == NULL || fout == NULL) {
-		fprintf(stderr, "Failed to open one or more input/output files.\n");
-		exit(1);
-	}
 
 	huge_matrixA = malloc(sizeof(long)*(long)SIZEX*(long)SIZEY);
 	huge_matrixB = malloc(sizeof(long)*(long)SIZEX*(long)SIZEY);
@@ -121,28 +102,61 @@ void load_matrix() {
 }
 
 void multiply() {
+	int n = SIZEX;
 	int s = 64;
-	for(int jj = 0; jj < SIZEX; jj += s){
-        for(int kk = 0; kk < SIZEX; kk += s){
-            int j_end = (jj + s < SIZEX) ? (jj + s) : SIZEX;
-		int k_end = (kk + s < SIZEX) ? (kk + s) : SIZEX;
+	int i, j, k, ii, kk, jj;
+	for (ii = 0; ii < n; ii += s) {
+		for (kk = 0; kk < n; kk += s) {
+			for (jj = 0; jj < n; jj += s) {				
+				for (i = ii; i < min(ii + s, n); i++) {
 
-		for (int i = 0; i < SIZEX; i++) {
-			for (int j = jj; j < j_end; j++) {
-				long temp = 0;
-				int k = kk;
-				for (; k + 3 < k_end; k += 4) {   // unroll by 4
-					temp += huge_matrixA[i*SIZEY + k]     * huge_matrixB[k*SIZEY + j];
-					temp += huge_matrixA[i*SIZEY + (k+1)] * huge_matrixB[(k+1)*SIZEY + j];
-					temp += huge_matrixA[i*SIZEY + (k+2)] * huge_matrixB[(k+2)*SIZEY + j];
-					temp += huge_matrixA[i*SIZEY + (k+3)] * huge_matrixB[(k+3)*SIZEY + j];
+					long *c_row = &huge_matrixC[i * SIZEY];
+					long *a_row = &huge_matrixA[i * SIZEY];
+
+					for (k = kk; k < min(kk + s, n); k++) {
+						long temp = a_row[k];
+						long *b_row = &huge_matrixB[k * SIZEY];
+						
+						j = jj;
+						int j_end = min(jj + s, n);
+						
+						for (; j <= j_end - 4; j += 4) {
+							c_row[j]   += temp * b_row[j];
+							c_row[j+1] += temp * b_row[j+1];
+							c_row[j+2] += temp * b_row[j+2];
+							c_row[j+3] += temp * b_row[j+3];
+						}						
+						for (; j < j_end; j++) {
+							c_row[j] += temp * b_row[j];
+						}
+					}
 				}
-				for (; k < k_end; k++) temp += huge_matrixA[i*SIZEY + k] * huge_matrixB[k*SIZEY + j];
-				huge_matrixC[i*SIZEY + j] += temp;
 			}
 		}
-        }
 	}
+	// for (i = 0; i < n; i++) {
+	// 	for (j = 0; j < n; j++) {
+	// 		huge_matrixC[i * SIZEY + j] = 0;
+	// 	}
+	// }
+	// for (kk = 0; kk < n; kk += s) {
+	// 	for (jj = 0; jj < n; jj += s) {
+	// 		for (i = 0; i < n; i++) {
+	// 			for (k = kk; k < min(kk + s, n); k++) {
+	// 				long temp = huge_matrixA[i*SIZEY + k];
+	// 				for (j = jj; j <= min(jj + s, n) - 4; j += 4) {
+	// 					huge_matrixC[i*SIZEY + j] += temp * huge_matrixB[k*SIZEY + j];
+	// 					huge_matrixC[i*SIZEY + j+1] += temp * huge_matrixB[k*SIZEY + j+1];
+	// 					huge_matrixC[i*SIZEY + j+2] += temp * huge_matrixB[k*SIZEY + j+2];
+	// 					huge_matrixC[i*SIZEY + j+3] += temp * huge_matrixB[k*SIZEY + j+3];
+	// 				}
+	// 				for (; j < min(jj + s, n); j++) {
+	// 					huge_matrixC[i*SIZEY + j] += temp * huge_matrixB[k*SIZEY + j];
+	// 				}
+	// 			}
+	// 		}
+	// 	}
+	// }
 }
 
 int main() {
@@ -178,6 +192,11 @@ int main() {
 
 	flush_all_caches();
 
+	fin1 = fopen("./input1.in","r");
+	fin2 = fopen("./input2.in","r");
+	fout = fopen("./out.in","w");
+	ftest = fopen("./reference.in","r");
+	
 	s = clock();
 	load_matrix();
 	t = clock();

@@ -1,5 +1,5 @@
-#define SIZEX 2000
-#define SIZEY 2000
+#define SIZEX 3000
+#define SIZEY 3000
 
 long * huge_matrixA;
 long * huge_matrixB;
