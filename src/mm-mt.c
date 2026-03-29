@@ -5,7 +5,7 @@
 #include <pthread.h>
 
 #define min(a, b) ((a) < (b) ? (a) : (b))
-#define FLUSH_SIZE (20 * 1024 * 1024)
+#define FLUSH_SIZE (64 * 1024 * 1024)
 
 typedef struct { 
 	FILE *f; 
