@@ -19,10 +19,10 @@ typedef struct {
 	int s;
 } MulArgs;
 
-// static double wall_seconds(struct timespec start, struct timespec end) {
-// 	return (double)(end.tv_sec - start.tv_sec) + 
-// 	(double)(end.tv_nsec - start.tv_nsec) / 1000000000.0;
-// }
+static double wall_seconds(struct timespec start, struct timespec end) {
+	return (double)(end.tv_sec - start.tv_sec) + 
+	(double)(end.tv_nsec - start.tv_nsec) / 1000000000.0;
+}
 
 static void fast_read_longs(FILE *f, long *dst, long n) {
     const size_t BUFSZ = 1 << 20; // 1MB
@@ -261,40 +261,40 @@ void multiply() {
 int main() {
 	
 	clock_t s,t;
-	// struct timespec ws, wt;
+	struct timespec ws, wt;
 	double total_in_base = 0.0;
 	double total_in_your = 0.0;
 	double total_mul_base = 0.0;
 	double total_mul_your = 0.0;
-	// double total_in_base_wall = 0.0;
-	// double total_in_your_wall = 0.0;
-	// double total_mul_base_wall = 0.0;
-	// double total_mul_your_wall = 0.0;
+	double total_in_base_wall = 0.0;
+	double total_in_your_wall = 0.0;
+	double total_mul_base_wall = 0.0;
+	double total_mul_your_wall = 0.0;
 	fin1 = fopen("./input1.in","r");
 	fin2 = fopen("./input2.in","r");
 	fout = fopen("./out.in","w");
 	ftest = fopen("./reference.in","r");
 	flush_all_caches();
 
-	// clock_gettime(CLOCK_MONOTONIC, &ws);
+	clock_gettime(CLOCK_MONOTONIC, &ws);
 	s = clock();
 	load_matrix_base();
 	t = clock();
-	// clock_gettime(CLOCK_MONOTONIC, &wt);
+	clock_gettime(CLOCK_MONOTONIC, &wt);
 	total_in_base += ((double)t-(double)s) / CLOCKS_PER_SEC;
-	// total_in_base_wall += wall_seconds(ws, wt);
+	total_in_base_wall += wall_seconds(ws, wt);
 	printf("[Baseline] Total time taken during the load = %f seconds\n", total_in_base);
-	// printf("[Baseline][Wall] Total time taken during the load = %f seconds\n", total_in_base_wall);
+	printf("[Baseline][Wall] Total time taken during the load = %f seconds\n", total_in_base_wall);
 
-	// clock_gettime(CLOCK_MONOTONIC, &ws);
+	clock_gettime(CLOCK_MONOTONIC, &ws);
 	s = clock();
 	multiply_base();
 	t = clock();
-	// clock_gettime(CLOCK_MONOTONIC, &wt);
+	clock_gettime(CLOCK_MONOTONIC, &wt);
 	total_mul_base += ((double)t-(double)s) / CLOCKS_PER_SEC;
-	// total_mul_base_wall += wall_seconds(ws, wt);
+	total_mul_base_wall += wall_seconds(ws, wt);
 	printf("[Baseline] Total time taken during the multiply = %f seconds\n", total_mul_base);
-	// printf("[Baseline][Wall] Total time taken during the multiply = %f seconds\n", total_mul_base_wall);
+	printf("[Baseline][Wall] Total time taken during the multiply = %f seconds\n", total_mul_base_wall);
 	fclose(fin1);
 	fclose(fin2);
 	fclose(fout);
@@ -307,25 +307,25 @@ int main() {
 	fout = fopen("./out.in","w");
 	ftest = fopen("./reference.in","r");
 	
-	// clock_gettime(CLOCK_MONOTONIC, &ws);
+	clock_gettime(CLOCK_MONOTONIC, &ws);
 	s = clock();
 	load_matrix();
 	t = clock();
-	// clock_gettime(CLOCK_MONOTONIC, &wt);
+	clock_gettime(CLOCK_MONOTONIC, &wt);
 	total_in_your += ((double)t-(double)s) / CLOCKS_PER_SEC;
-	// total_in_your_wall += wall_seconds(ws, wt);
+	total_in_your_wall += wall_seconds(ws, wt);
 	printf("Total time taken during the load = %f seconds\n", total_in_your);
-	// printf("[Wall] Total time taken during the load = %f seconds\n", total_in_your_wall);
+	printf("[Wall] Total time taken during the load = %f seconds\n", total_in_your_wall);
 
-	// clock_gettime(CLOCK_MONOTONIC, &ws);
+	clock_gettime(CLOCK_MONOTONIC, &ws);
 	s = clock();
 	multiply();
 	t = clock();
-	// clock_gettime(CLOCK_MONOTONIC, &wt);
+	clock_gettime(CLOCK_MONOTONIC, &wt);
 	total_mul_your += ((double)t-(double)s) / CLOCKS_PER_SEC;
-	// total_mul_your_wall += wall_seconds(ws, wt);
+	total_mul_your_wall += wall_seconds(ws, wt);
 	printf("Total time taken during the multiply = %f seconds\n", total_mul_your);
-	// printf("[Wall] Total time taken during the multiply = %f seconds\n", total_mul_your_wall);
+	printf("[Wall] Total time taken during the multiply = %f seconds\n", total_mul_your_wall);
 	write_results();
 	fclose(fin1);
 	fclose(fin2);
